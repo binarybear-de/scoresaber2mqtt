@@ -8,41 +8,40 @@ import configparser
 import requests
 import sys
 
-isConnected = False  # global variable for the state of the connection
+# global variable for the state of the connection
+isConnected = False
 
 # Source configuration from external config file
 config = configparser.ConfigParser()
-config.read('scoresaber.ini')
+config.read('/etc/scoresaber.ini')
 uid = int(config['scoresaber']['uid'])
-
-broker_address = config['mqtt']['address']
+mqtt_address = config['mqtt']['address']
 port = int(config['mqtt']['port'])
 user = config['mqtt']['user']
 password = config['mqtt']['password']
 
-def on_connect(client, userdata, flags, rc):
-    if rc == 0:
-        global isConnected  # Use global variable
-        isConnected = True  # Signal connection
-    else:
-        sys.exit(1)
 
-client = mqttClient.Client("Python")  # create new instance
-client.username_pw_set(user, password=password)  # set username and password
-client.on_connect = on_connect  # attach function to callback
-client.connect(broker_address, port=port)  # connect to broker
-client.loop_start()  # start the loop
+def on_connect(client, userdata, flags, rc):
+	if rc != 0:
+		sys.exit(1)
+	global isConnected
+	isConnected = True
+
+client = mqttClient.Client("scoresaber2mqtt")
+client.username_pw_set(user, password=password)
+client.on_connect = on_connect
+client.connect(mqtt_address, port=port)
+client.loop_start()
 
 while isConnected != True:  # Wait for connection
-    time.sleep(1)
+	time.sleep(0.1)
 
-try:
-    data = requests.get('https://scoresaber.com/api/player/<player_id>/basic')
-    if data.status_code == 200:
-         for item in data.json():
-              client.publish(f'games/beatsaber/{item}', data.json()[item])
+data = requests.get('https://scoresaber.com/api/player/76561198078668652/basic')
+if data.status_code != 200:
+	sys.exit(1)
 
-except KeyboardInterrupt:
+for item in data.json():
+	client.publish(f'games/beatsaber/{item}', data.json()[item])
 
-    client.disconnect()
-    client.loop_stop()
+client.disconnect()
+client.loop_stop()
