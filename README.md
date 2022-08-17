@@ -21,5 +21,19 @@ I recommend using an unpriviledged user and crontab entry for that:
 */5 * * * * /usr/local/bin/scoresaber2mqtt.py
 ```
 
+# data
+currently the following values are being exposed: \
+id, name, profilePicture, country, pp, rank, countryRank, histories, permissions, banned, inactive
+
 ## Configuration in HomeAssistant
-coming soon
+```
+mqtt:
+  sensor:
+    - name: "Scoresaber Rank Global"
+      state_topic: "games/beatsaber/rank"
+    - name: "Scoresaber Rank Country"
+      state_topic: "games/beatsaber/countryRank"
+    - name: "Scoresaber PP"
+      state_topic: "games/beatsaber/pp"
+      unit_of_measurement: "pp"
+```
